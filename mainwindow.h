@@ -44,6 +44,7 @@ public:
     bool m_EmergencyLampValue;
     bool m_LampDirState;
     bool m_LampDirTimerState;
+    bool aut=false; //ch
     unsigned char m_LampDirValue;
     unsigned char m_RotaryLedValue;
 
@@ -80,6 +81,8 @@ public slots:
     void slotBtnLampFrontClicked(void);
     void slotBtnLampTailClicked(void);
     void slotBtnLampOffClicked(void);
+    void slotBtnLampHeadClicked(void);
+    void slotBtnLampAutoClicked(void);
     void slotDialLampValueChange(int value);
     void slotBtnDirColorReset(void);
 
@@ -103,6 +106,8 @@ public slots:
 
     void slotInputDevState(void);
     void setGpioPushInitialization();
+    
+    void on_btnLampAuto_clicked();
 
 private:
     Ui::MainWindow *ui;
