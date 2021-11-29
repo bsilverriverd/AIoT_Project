@@ -74,6 +74,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->btnLampFront, SIGNAL(clicked()), SLOT(slotBtnLampFrontClicked()));
     connect(ui->btnLampTail, SIGNAL(clicked()), SLOT(slotBtnLampTailClicked()));
     connect(ui->btnLampOff, SIGNAL(clicked()), SLOT(slotBtnLampOffClicked()));
+    connect(ui->btnLampHead, SIGNAL(clicked()), SLOT(slotBtnLampHeadClicked()));    //ch
+    connect(ui->btnLampAuto, SIGNAL(clicked()), SLOT(on_btnLampAuto_clicked()));    //ch
     connect(ui->diaLamp, SIGNAL(valueChanged(int)), SLOT(slotDialLampValueChange(int)));
 
     connect(ui->btnLampDirLeft, SIGNAL(clicked()), SLOT(slotBtnDirLeftClicked()));
@@ -386,7 +388,7 @@ void MainWindow::slotDialLampValueChange(int value)
 {
     int setBtnValue;
     value = ui->diaLamp->value();
-    setBtnValue = value % 4;
+    setBtnValue = value % 6;
 
     switch(setBtnValue)
     {
@@ -401,6 +403,12 @@ void MainWindow::slotDialLampValueChange(int value)
         break;
     case 3:
         slotBtnLampLowClicked();
+        break;
+    case 4:
+        slotBtnLampHeadClicked();
+        break;
+    case 5:
+        on_btnLampAuto_clicked();
         break;
     default:
         break;
@@ -463,7 +471,14 @@ QString MainWindow::getI2cIlluminationValue(void)
     if(retv!=1)
         putSystemMessage("[System] ADC error!.");
     retv=getI2cIlluminRegValue(&mI2cFd);
-
+    if(aut){
+        if(retv<30){
+            m_LampValue = 0x04;
+        } else {
+            m_LampValue = 0x00;
+        }
+    }
+    
     return strValue.sprintf("%2d %%",retv);
 }
 
@@ -555,16 +570,35 @@ void MainWindow::slotTimeDisplay(void)
     switch(m_LampValue)
     {
         case 0: // OFF               1111 1111
-            m_RotaryLedValue = 0xFF;
+            //m_RotaryLedValue = 0xFF;
+            setGpioLedControl(GP_LEDA, B_OFF);
         break;
         case 1: // Tail Lamp         1110 0111
-            m_RotaryLedValue = 0xe7;
+            //m_RotaryLedValue = 0xe7;
+            setGpioLedControl(GP_LED0, B_ON);
+            setGpioLedControl(GP_LED1, B_OFF);
+            setGpioLedControl(GP_LED2, B_OFF);
+            setGpioLedControl(GP_LED3, B_OFF);
         break;
         case 2: // Front Lamp        1010 0101
-            m_RotaryLedValue = 0xa5;
+            //m_RotaryLedValue = 0xa5;
+            setGpioLedControl(GP_LED0, B_ON);
+            setGpioLedControl(GP_LED1, B_ON);
+            setGpioLedControl(GP_LED2, B_ON);
+            setGpioLedControl(GP_LED3, B_OFF);
         break;
         case 3: // Low Lamp          0110 0110
-            m_RotaryLedValue = 0x66;
+            //m_RotaryLedValue = 0x66;
+            setGpioLedControl(GP_LED0, B_ON);
+            setGpioLedControl(GP_LED1, B_ON);
+            setGpioLedControl(GP_LED2, B_OFF);
+            setGpioLedControl(GP_LED3, B_ON);
+        break;
+        case 4: // Head Lamp
+            setGpioLedControl(GP_LED0, B_ON);
+            setGpioLedControl(GP_LED1, B_ON);
+            setGpioLedControl(GP_LED2, B_OFF);
+            setGpioLedControl(GP_LED3, B_OFF);
         break;
         default:
         break;
@@ -592,6 +626,7 @@ void MainWindow::refreshTime()
 void MainWindow::slotBtnLampLowClicked(void)
 {
     slotBtnLampColorReset();
+    aut = false;
     ui->btnLampLow->setStyleSheet("QPushButton { background-color : red; }");
     ui->diaLamp->setValue(3);
     m_LampValue = 0x03;
@@ -600,6 +635,7 @@ void MainWindow::slotBtnLampLowClicked(void)
 void MainWindow::slotBtnLampFrontClicked(void)
 {
     slotBtnLampColorReset();
+    aut = false;
     ui->btnLampFront->setStyleSheet("QPushButton { background-color : red; }");
     ui->diaLamp->setValue(2);
     m_LampValue = 0x02;
@@ -608,17 +644,36 @@ void MainWindow::slotBtnLampFrontClicked(void)
 void MainWindow::slotBtnLampTailClicked(void)
 {
     slotBtnLampColorReset();
+    aut = false;
     ui->btnLampTail->setStyleSheet("QPushButton { background-color : red; }");
     ui->diaLamp->setValue(1);
     m_LampValue = 0x01;
 }
 
+void MainWindow::slotBtnLampHeadClicked(void)
+{
+    slotBtnLampColorReset();
+    aut = false;
+    ui->btnLampHead->setStyleSheet("QPushButton { background-color : red; }");
+    ui->diaLamp->setValue(4);
+    m_LampValue = 0x04;
+}
+
 void MainWindow::slotBtnLampOffClicked(void)
 {
     slotBtnLampColorReset();
+    aut = false;
     ui->btnLampOff->setStyleSheet("QPushButton { background-color : red; }");
     ui->diaLamp->setValue(0);
     m_LampValue = 0x00;
+}
+
+void MainWindow::on_btnLampAuto_clicked(void)
+{
+    slotBtnLampColorReset();
+    ui->btnLampAuto->setStyleSheet("QPushButton { background-color : red; }");
+    ui->diaLamp->setValue(5);
+    aut = true;
 }
 
 void MainWindow::slotBtnLampColorReset(void)
